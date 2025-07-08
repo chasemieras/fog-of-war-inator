@@ -80,7 +80,7 @@ To create a standalone executable:
 3. Build the executable:
 
    ```bash
-   pyinstaller --noconfirm --onefile --windowed app.py
+   pyinstaller app.spec
    ```
 
 The executable will be created in the `dist/` folder.

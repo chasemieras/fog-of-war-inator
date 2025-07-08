@@ -1,6 +1,7 @@
 """Creates a program to handle fog of war for TTRPGs with save/load functionality"""
 import os
 import json
+import time
 from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -418,10 +419,15 @@ class FogOfWar:
             messagebox.showwarning("Warning", "Please load a map first!")
             return
 
-        if self.dm_window is None or not self.dm_window.window.winfo_exists():
-            self.dm_window = DMWindow(self)
-        else:
-            self.dm_window.window.lift()
+        try:
+            if self.dm_window is None or not self.dm_window.window.winfo_exists():
+                self.dm_window = DMWindow(self)
+                self.dm_window.window.after(200, self.dm_window.update_display)
+            else:
+                self.dm_window.window.lift()
+        except Exception as e:
+            messagebox.showerror(
+                "Error", f"Failed to open DM window: {str(e)}")
 
     def open_player_window(self):
         """Opens the player window"""
@@ -429,10 +435,16 @@ class FogOfWar:
             messagebox.showwarning("Warning", "Please load a map first!")
             return
 
-        if self.player_window is None or not self.player_window.window.winfo_exists():
-            self.player_window = PlayerWindow(self)
-        else:
-            self.player_window.window.lift()
+        try:
+            if self.player_window is None or not self.player_window.window.winfo_exists():
+                self.player_window = PlayerWindow(self)
+                self.player_window.window.after(
+                    200, self.player_window.update_display)
+            else:
+                self.player_window.window.lift()
+        except Exception as e:
+            messagebox.showerror(
+                "Error", f"Failed to open player window: {str(e)}")
 
     def reset_fog(self):
         """Resets the fog of the map"""
@@ -467,7 +479,6 @@ class FogOfWar:
             if force_update:
                 self.update_queue.put("update_all")
             else:
-                import time
                 current_time = time.time()
                 if current_time - self.last_update_time >= self.update_interval:
                     self.update_queue.put("update_all")
@@ -497,7 +508,7 @@ class FogOfWar:
             self.update_status("Nothing to redo")
 
     def update_windows(self):
-        """Updates the windows as the DM draws"""
+        """Updates the windows"""
         while True:
             try:
                 message = self.update_queue.get(timeout=0.1)
@@ -508,13 +519,30 @@ class FogOfWar:
                         except queue.Empty:
                             break
 
-                    if self.dm_window and self.dm_window.window.winfo_exists():
-                        self.dm_window.window.after(
-                            1, self.dm_window.update_display)
-                    if self.player_window and self.player_window.window.winfo_exists():
-                        self.player_window.window.after(
-                            1, self.player_window.update_display)
+                    try:
+                        if self.dm_window and hasattr(self.dm_window, 'window'):
+                            if self.dm_window.window.winfo_exists():
+                                self.dm_window.window.after_idle(
+                                    self.dm_window.update_display)
+                    except tk.TclError:
+                        self.dm_window = None
+                    except Exception as e:
+                        print(f"Error updating DM window: {e}")
+
+                    try:
+                        if self.player_window and hasattr(self.player_window, 'window'):
+                            if self.player_window.window.winfo_exists():
+                                self.player_window.window.after_idle(
+                                    self.player_window.update_display)
+                    except tk.TclError:
+                        self.player_window = None
+                    except Exception as e:
+                        print(f"Error updating player window: {e}")
+
             except queue.Empty:
+                continue
+            except Exception as e:
+                print(f"Error in update_windows: {e}")
                 continue
 
     def run(self):
@@ -527,51 +555,57 @@ class DMWindow:
 
     def __init__(self, fog_app):
         self.fog_app = fog_app
-        self.window = ctk.CTkToplevel(fog_app.root)
-        self.window.title("DM View - Fog of War")
+        try:
+            self.window = ctk.CTkToplevel(fog_app.root)
+            self.window.title("DM View - Fog of War")
 
-        self.window.geometry("800x600")
-        self.window.configure(bg='black')
+            self.window.geometry("800x600")
+            self.window.configure(bg='black')
 
-        # Add escape key binding to exit fullscreen
-        self.window.bind('<Escape>', self.toggle_fullscreen)
-        self.window.bind('<F11>', self.toggle_fullscreen)
+            # Add escape key binding to exit fullscreen
+            self.window.bind('<Escape>', self.toggle_fullscreen)
+            self.window.bind('<F11>', self.toggle_fullscreen)
 
-        # Bind Ctrl+S for manual save
-        self.window.bind('<Control-s>', self.fog_app.manual_save)
-        self.window.bind('<Control-S>', self.fog_app.manual_save)
+            # Bind Ctrl+S for manual save
+            self.window.bind('<Control-s>', self.fog_app.manual_save)
+            self.window.bind('<Control-S>', self.fog_app.manual_save)
 
-        self.window.bind('<Control-z>', self.fog_app.undo())
-        self.window.bind('<Control-y>', self.fog_app.redo())
+            self.window.bind('<Control-z>', self.fog_app.undo())
+            self.window.bind('<Control-y>', self.fog_app.redo())
 
-        self.window.bind('<F1>', self.show_help)
+            self.window.bind('<F1>', self.show_help)
 
-        # Bind window close event to auto-save
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+            # Bind window close event to auto-save
+            self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Focus the window
-        self.window.focus_set()
+            # Focus the window
+            self.window.focus_set()
 
-        # Create canvas that fills the entire screen
-        self.canvas = tk.Canvas(self.window, bg="black", highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
+            # Create canvas that fills the entire screen
+            self.canvas = tk.Canvas(
+                self.window, bg="black", highlightthickness=0)
+            self.canvas.pack(fill="both", expand=True)
 
-        # Bind click events
-        self.canvas.bind("<Button-1>", self.on_click)
-        self.canvas.bind("<B1-Motion>", self.on_drag)
+            # Bind click events
+            self.canvas.bind("<Button-1>", self.on_click)
+            self.canvas.bind("<B1-Motion>", self.on_drag)
 
-        # Variables for smooth dragging (removed since we're handling it differently)
-        self.last_drag_time = 0
+            # Variables for smooth dragging (removed since we're handling it differently)
+            self.last_drag_time = 0
 
-        # Scale factor for image display
-        self.scale_factor = 1.0
-        self.display_width = 0
-        self.display_height = 0
-        self.x_offset = 0
-        self.y_offset = 0
+            # Scale factor for image display
+            self.scale_factor = 1.0
+            self.display_width = 0
+            self.display_height = 0
+            self.x_offset = 0
+            self.y_offset = 0
+            self.dm_photo = None
 
-        # Wait for window to be fully initialized
-        self.window.after(100, self.update_display)
+            self.window.after(500, self.update_display)
+
+        except Exception as e:
+            print(f"Error creating DM window: {e}")
+            raise
 
     def show_help(self, event=None):
         """Shows the help popup"""
@@ -634,51 +668,58 @@ class DMWindow:
         if self.fog_app.map_image is None:
             return
 
-        screen_width = self.window.winfo_screenwidth()
-        screen_height = self.window.winfo_screenheight()
+        try:
+            self.window.update_idletasks()
 
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
 
-        if canvas_width <= 1 or canvas_height <= 1:
-            canvas_width = screen_width
-            canvas_height = screen_height
+            if canvas_width <= 1 or canvas_height <= 1:
+                canvas_width = 800
+                canvas_height = 600
 
-        img_height, img_width = self.fog_app.map_image.shape[:2]
-        scale_x = canvas_width / img_width
-        scale_y = canvas_height / img_height
+            img_height, img_width = self.fog_app.map_image.shape[:2]
+            scale_x = canvas_width / img_width
+            scale_y = canvas_height / img_height
 
-        self.scale_factor = min(scale_x, scale_y)
+            self.scale_factor = min(scale_x, scale_y)
 
-        self.display_width = int(img_width * self.scale_factor)
-        self.display_height = int(img_height * self.scale_factor)
+            self.display_width = int(img_width * self.scale_factor)
+            self.display_height = int(img_height * self.scale_factor)
 
-        self.x_offset = (canvas_width - self.display_width) // 2
-        self.y_offset = (canvas_height - self.display_height) // 2
+            self.x_offset = (canvas_width - self.display_width) // 2
+            self.y_offset = (canvas_height - self.display_height) // 2
 
-        dm_image = self.fog_app.map_image.copy()
+            try:
+                dm_image = self.fog_app.map_image.copy()
+                fog_overlay = np.full_like(dm_image, 64, dtype=np.uint8)
 
-        fog_overlay = np.full_like(dm_image, 64, dtype=np.uint8)
+                fog_alpha = (
+                    255 - self.fog_app.fog_mask).astype(np.float32) / 255.0
+                fog_alpha = fog_alpha[:, :, np.newaxis]
 
-        fog_alpha = (255 - self.fog_app.fog_mask).astype(np.float32) / 255.0
-        fog_alpha = fog_alpha[:, :, np.newaxis]
+                dm_image = dm_image.astype(np.float32)
+                fog_overlay = fog_overlay.astype(np.float32)
 
-        dm_image = dm_image.astype(np.float32)
-        fog_overlay = fog_overlay.astype(np.float32)
+                dm_image = (dm_image * (1 - fog_alpha * 0.7) +
+                            fog_overlay * fog_alpha * 0.7).astype(np.uint8)
 
-        dm_image = (dm_image * (1 - fog_alpha * 0.7) +
-                    fog_overlay * fog_alpha * 0.7).astype(np.uint8)
+                dm_pil = Image.fromarray(dm_image)
+                dm_pil_resized = dm_pil.resize(
+                    (self.display_width, self.display_height), Image.LANCZOS)
+                self.dm_photo = ImageTk.PhotoImage(dm_pil_resized)
 
-        dm_pil = Image.fromarray(dm_image)
-        dm_pil_resized = dm_pil.resize(
-            (self.display_width, self.display_height), Image.LANCZOS)
-        self.dm_photo = ImageTk.PhotoImage(dm_pil_resized)
+                self.canvas.delete("all")
+                self.canvas.create_image(
+                    self.x_offset, self.y_offset, anchor="nw", image=self.dm_photo)
 
-        self.canvas.delete("all")
-        self.canvas.create_image(
-            self.x_offset, self.y_offset, anchor="nw", image=self.dm_photo)
+            except Exception as e:
+                self.canvas.delete("all")
+                self.canvas.create_text(canvas_width//2, canvas_height//2,
+                                        text="Error loading map", fill="white")
 
-        self.canvas.update_idletasks()
+        except Exception as e:
+            print(f"Error in update_display: {e}")
 
 
 class PlayerWindow:
@@ -686,39 +727,45 @@ class PlayerWindow:
 
     def __init__(self, fog_app):
         self.fog_app = fog_app
-        self.window = ctk.CTkToplevel(fog_app.root)
-        self.window.title("Player View - Fog of War")
+        try:
+            self.window = ctk.CTkToplevel(fog_app.root)
+            self.window.title("Player View - Fog of War")
 
-        self.window.geometry("800x600")
-        self.window.configure(bg='black')
+            self.window.geometry("800x600")
+            self.window.configure(bg='black')
 
-        # Add escape key binding to exit fullscreen
-        self.window.bind('<Escape>', self.toggle_fullscreen)
-        self.window.bind('<F11>', self.toggle_fullscreen)
+            # Add escape key binding to exit fullscreen
+            self.window.bind('<Escape>', self.toggle_fullscreen)
+            self.window.bind('<F11>', self.toggle_fullscreen)
 
-        # Bind Ctrl+S for manual save
-        self.window.bind('<Control-s>', self.fog_app.manual_save)
-        self.window.bind('<Control-S>', self.fog_app.manual_save)
+            # Bind Ctrl+S for manual save
+            self.window.bind('<Control-s>', self.fog_app.manual_save)
+            self.window.bind('<Control-S>', self.fog_app.manual_save)
 
-        # Bind window close event to auto-save
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+            # Bind window close event to auto-save
+            self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Focus the window
-        self.window.focus_set()
+            # Focus the window
+            self.window.focus_set()
 
-        # Create canvas that fills the entire screen
-        self.canvas = tk.Canvas(self.window, bg="black", highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
+            # Create canvas that fills the entire screen
+            self.canvas = tk.Canvas(
+                self.window, bg="black", highlightthickness=0)
+            self.canvas.pack(fill="both", expand=True)
 
-        # Scale factor for image display
-        self.scale_factor = 1.0
-        self.display_width = 0
-        self.display_height = 0
-        self.x_offset = 0
-        self.y_offset = 0
+            # Scale factor for image display
+            self.scale_factor = 1.0
+            self.display_width = 0
+            self.display_height = 0
+            self.x_offset = 0
+            self.y_offset = 0
+            self.player_photo = None
 
-        # Wait for window to be fully initialized
-        self.window.after(100, self.update_display)
+            self.window.after(500, self.update_display)
+
+        except Exception as e:
+            print(f"Error creating player window: {e}")
+            raise
 
     def on_closing(self):
         """Handle window closing - auto-save before closing"""
@@ -739,58 +786,52 @@ class PlayerWindow:
         if self.fog_app.map_image is None:
             return
 
-        # Get screen dimensions
-        screen_width = self.window.winfo_screenwidth()
-        screen_height = self.window.winfo_screenheight()
+        try:
+            self.window.update_idletasks()
 
-        # Get canvas dimensions (should match screen in fullscreen)
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
 
-        # Use screen dimensions if canvas isn't ready yet
-        if canvas_width <= 1 or canvas_height <= 1:
-            canvas_width = screen_width
-            canvas_height = screen_height
+            if canvas_width <= 1 or canvas_height <= 1:
+                canvas_width = 800
+                canvas_height = 600
 
-        # Calculate scale to fit the screen without distortion
-        img_height, img_width = self.fog_app.map_image.shape[:2]
-        scale_x = canvas_width / img_width
-        scale_y = canvas_height / img_height
+            img_height, img_width = self.fog_app.map_image.shape[:2]
+            scale_x = canvas_width / img_width
+            scale_y = canvas_height / img_height
 
-        # Use the smaller scale to fit the entire image without cropping or distortion
-        self.scale_factor = min(scale_x, scale_y)
+            self.scale_factor = min(scale_x, scale_y)
 
-        # Calculate display dimensions
-        self.display_width = int(img_width * self.scale_factor)
-        self.display_height = int(img_height * self.scale_factor)
+            self.display_width = int(img_width * self.scale_factor)
+            self.display_height = int(img_height * self.scale_factor)
 
-        # Calculate offset to center the image
-        self.x_offset = (canvas_width - self.display_width) // 2
-        self.y_offset = (canvas_height - self.display_height) // 2
+            self.x_offset = (canvas_width - self.display_width) // 2
+            self.y_offset = (canvas_height - self.display_height) // 2
 
-        # Create player view (only revealed areas visible) - Optimized
-        # Apply fog mask (white areas in mask show the map)
-        fog_alpha = self.fog_app.fog_mask.astype(np.float32) / 255.0
-        # Add channel dimension for broadcasting
-        fog_alpha = fog_alpha[:, :, np.newaxis]
+            try:
+                fog_alpha = self.fog_app.fog_mask.astype(np.float32) / 255.0
+                fog_alpha = fog_alpha[:, :, np.newaxis]
 
-        # Vectorized multiplication - faster than creating zeros array first
-        player_image = (self.fog_app.map_image.astype(
-            np.float32) * fog_alpha).astype(np.uint8)
+                player_image = (self.fog_app.map_image.astype(
+                    np.float32) * fog_alpha).astype(np.uint8)
 
-        # Resize for display using PIL
-        player_pil = Image.fromarray(player_image)
-        player_pil_resized = player_pil.resize(
-            (self.display_width, self.display_height), Image.LANCZOS)
-        self.player_photo = ImageTk.PhotoImage(player_pil_resized)
+                player_pil = Image.fromarray(player_image)
+                player_pil_resized = player_pil.resize(
+                    (self.display_width, self.display_height), Image.LANCZOS)
+                self.player_photo = ImageTk.PhotoImage(player_pil_resized)
 
-        # Clear canvas and display image
-        self.canvas.delete("all")
-        self.canvas.create_image(
-            self.x_offset, self.y_offset, anchor="nw", image=self.player_photo)
+                self.canvas.delete("all")
+                self.canvas.create_image(
+                    self.x_offset, self.y_offset, anchor="nw", image=self.player_photo)
 
-        # Force canvas update
-        self.canvas.update_idletasks()
+            except Exception as e:
+                print(f"Error creating player image: {e}")
+                self.canvas.delete("all")
+                self.canvas.create_text(canvas_width//2, canvas_height//2,
+                                        text="Error loading map", fill="white")
+
+        except Exception as e:
+            print(f"Error in update_display: {e}")
 
 
 if __name__ == "__main__":
