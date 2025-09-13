@@ -15,17 +15,11 @@ from utils.fog_utils import reset_fog, clear_fog
 
 # Save/load methods
 from utils.save_utils import (
-    get_fog_save_path, #todo find where this is used
     save_fog_state, 
     load_fog_state,
-    load_fog_from_path, #todo find where this is used
     auto_load_fog_state,
-    manual_save, #todo find where this is used
     update_status
 )
-
-# Undo/redo methods
-from utils.undo_redo_utils import undo, redo
 
 class FogOfWar:
     """The main popup that you load maps with"""
@@ -185,10 +179,10 @@ class FogOfWar:
                 # Create initial fog mask (all black)
                 self.fog_mask = np.zeros(
                     (self.map_image.shape[0], self.map_image.shape[1]), dtype=np.uint8)
-
+                print("pre auto load")
                 # Try to auto-load associated fog state
                 auto_load_fog_state(self)
-
+                print("post load")
                 messagebox.showinfo("Success", "Map loaded successfully!")
                 update_status(self, "Map loaded successfully")
 
@@ -274,7 +268,7 @@ class FogOfWar:
     def run(self):
         """Runs the main loop"""
         self.root.mainloop()
-
+        
 if __name__ == "__main__":
     app = FogOfWar()
     app.run()

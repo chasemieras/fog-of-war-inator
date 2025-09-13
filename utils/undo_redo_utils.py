@@ -1,3 +1,5 @@
+from utils.save_utils import update_status
+
 def undo(self, event=None):
         """Undoes the last done action"""
         if self.undo_stack:

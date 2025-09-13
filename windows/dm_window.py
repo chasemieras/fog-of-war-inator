@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 
 from utils.save_utils import manual_save, save_fog_state
 from utils.fog_utils import reset_fog, clear_fog, reveal_area
+from utils.undo_redo_utils import undo, redo
 
 class DMWindow:
     """Generates the DM Window"""
@@ -26,8 +27,8 @@ class DMWindow:
             # Bind Ctrl+S for manual save
             self.window.bind('<Control-s>', lambda e: manual_save(self.fog_app))
 
-            self.window.bind('<Control-z>', lambda e: self.fog_app.undo())
-            self.window.bind('<Control-y>', lambda e: self.fog_app.redo())
+            self.window.bind('<Control-z>', lambda e: undo(self.fog_app))
+            self.window.bind('<Control-y>', lambda e: redo(self.fog_app))
 
             # Bind window close event to auto-save
             self.window.protocol("WM_DELETE_WINDOW", self.on_closing)

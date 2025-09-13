@@ -181,11 +181,11 @@ def auto_load_fog_state(self):
         """Automatically load fog state if it exists for the current map"""
         if not self.current_map_path:
             return
-
         # First, try to find exact match in fog directory
         auto_save_path = get_fog_save_path(self)
         if auto_save_path and os.path.exists(auto_save_path):
             try:
+                print("checking again")
                 load_fog_from_path(self, auto_save_path)
                 update_status(self, "Auto-loaded existing fog state")
                 return
@@ -231,14 +231,3 @@ def update_status(self, message):
         if self.map_image is None:
             messagebox.showwarning("Warning", "Please load a map first!")
             return
-
-        try:
-            if self.player_window is None or not self.player_window.window.winfo_exists():
-                self.player_window = PlayerWindow(self)
-                self.player_window.window.after(
-                    200, self.player_window.update_display)
-            else:
-                self.player_window.window.lift()
-        except Exception as e:
-            messagebox.showerror(
-                "Error", f"Failed to open player window: {str(e)}")
