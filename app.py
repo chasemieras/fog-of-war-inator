@@ -179,10 +179,8 @@ class FogOfWar:
                 # Create initial fog mask (all black)
                 self.fog_mask = np.zeros(
                     (self.map_image.shape[0], self.map_image.shape[1]), dtype=np.uint8)
-                print("pre auto load")
                 # Try to auto-load associated fog state
                 auto_load_fog_state(self)
-                print("post load")
                 messagebox.showinfo("Success", "Map loaded successfully!")
                 update_status(self, "Map loaded successfully")
 
