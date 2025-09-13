@@ -1,5 +1,4 @@
 import customtkinter as ctk
-
 import tkinter as tk
 import numpy as np
 from PIL import Image, ImageTk
@@ -47,8 +46,7 @@ class PlayerWindow:
 
     def on_closing(self):
         """Handle window closing - auto-save before closing"""
-        self.fog_app.save_fog_state(auto_save=True)
-        self.fog_app.player_window = None
+        self.player_window = None
         self.window.destroy()
 
     def toggle_fullscreen(self, event=None):

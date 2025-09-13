@@ -4,7 +4,7 @@ from datetime import datetime
 from tkinter import filedialog, messagebox
 import numpy as np
 from PIL import Image
-from player_window import PlayerWindow
+from windows.player_window import PlayerWindow
 
 def get_fog_save_path(self, map_path=None):
         """Generate a fog save file path based on the map path"""
@@ -38,7 +38,7 @@ def save_fog_state(self, auto_save=False):
         try:
             if auto_save:
                 # Use auto-generated path for auto-save
-                save_path = self.get_fog_save_path()
+                save_path = get_fog_save_path(self)
             else:
                 # Ask user for save location for manual save
                 default_filename = os.path.splitext(
@@ -183,7 +183,7 @@ def auto_load_fog_state(self):
             return
 
         # First, try to find exact match in fog directory
-        auto_save_path = self.get_fog_save_path()
+        auto_save_path = get_fog_save_path(self)
         if auto_save_path and os.path.exists(auto_save_path):
             try:
                 self.load_fog_from_path(auto_save_path)

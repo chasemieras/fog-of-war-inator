@@ -7,29 +7,28 @@ import customtkinter as ctk
 import numpy as np
 from PIL import Image
 
-from dm_window import DMWindow
-from player_window import PlayerWindow
+from windows.dm_window import DMWindow
+from windows.player_window import PlayerWindow
 
 # Fog methods
-from fog.fog_utils import reset_fog, clear_fog, reveal_area
+from utils.fog_utils import reset_fog, clear_fog, reveal_area
 
 # Save/load methods
-from fog.save_utils import (
-    get_fog_save_path,
-    save_fog_state,
+from utils.save_utils import (
+    get_fog_save_path, #todo find where this is used
+    save_fog_state, 
     load_fog_state,
-    load_fog_from_path,
+    load_fog_from_path, #todo find where this is used
     auto_load_fog_state,
-    manual_save,
+    manual_save, #todo find where this is used
     update_status
 )
 
 # Undo/redo methods
-from fog.undo_redo_utils import undo, redo
+from utils.undo_redo_utils import undo, redo
 
 class FogOfWar:
     """The main popup that you load maps with"""
-
     def __init__(self):
         # Initialize the main application
         ctk.set_appearance_mode("dark")
@@ -110,11 +109,11 @@ class FogOfWar:
         save_load_frame.pack(pady=10)
 
         save_btn = ctk.CTkButton(save_load_frame, text="Save Fog State",
-                                 command=self.save_fog_state, width=120)
+                                 command=save_fog_state(self), width=120)
         save_btn.pack(side="left", padx=5)
 
         load_btn = ctk.CTkButton(save_load_frame, text="Load Fog State",
-                                 command=self.load_fog_state, width=120)
+                                 command=load_fog_state(self), width=120)
         load_btn.pack(side="left", padx=5)
 
         # Reveal radius slider
@@ -151,11 +150,11 @@ class FogOfWar:
         control_frame.pack(pady=10)
 
         reset_btn = ctk.CTkButton(control_frame, text="Reset Fog",
-                                  command=self.reset_fog, width=120)
+                                  command=reset_fog, width=120)
         reset_btn.pack(side="left", padx=5)
 
         clear_btn = ctk.CTkButton(control_frame, text="Clear All Fog",
-                                  command=self.clear_fog, width=120)
+                                  command=clear_fog, width=120)
         clear_btn.pack(side="left", padx=5)
 
         # Status label
@@ -188,10 +187,10 @@ class FogOfWar:
                     (self.map_image.shape[0], self.map_image.shape[1]), dtype=np.uint8)
 
                 # Try to auto-load associated fog state
-                self.auto_load_fog_state()
+                auto_load_fog_state(self)
 
                 messagebox.showinfo("Success", "Map loaded successfully!")
-                self.update_status("Map loaded successfully")
+                update_status(self, "Map loaded successfully")
 
                 # Update windows if they're open
                 self.update_queue.put("update_all")
@@ -199,7 +198,7 @@ class FogOfWar:
             except Exception as e:
                 messagebox.showerror(
                     "Error", f"Failed to load image: {str(e)}")
-                self.update_status("Failed to load map")
+                update_status(self, "Failed to load map")
 
     def update_windows(self):
         """Updates the windows"""

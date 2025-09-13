@@ -4,6 +4,9 @@ from tkinter import messagebox
 import numpy as np
 from PIL import Image, ImageTk
 
+from utils.save_utils import manual_save
+from utils.fog_state import save_fog_state
+
 class DMWindow:
     """Generates the DM Window"""
 
@@ -21,7 +24,7 @@ class DMWindow:
             self.window.bind('<F11>', self.toggle_fullscreen)
 
             # Bind Ctrl+S for manual save
-            self.window.bind('<Control-s>', self.fog_app.manual_save)
+            self.window.bind('<Control-s>', manual_save)
 
             self.window.bind('<Control-z>', lambda e: self.fog_app.undo())
             self.window.bind('<Control-y>', lambda e: self.fog_app.redo())
@@ -76,7 +79,7 @@ class DMWindow:
 
     def on_closing(self):
         """Handle window closing - auto-save before closing"""
-        self.fog_app.save_fog_state(auto_save=True)
+        save_fog_state(self, auto_save=True)
         self.fog_app.dm_window = None
         self.window.destroy()
 
