@@ -11,7 +11,7 @@ from windows.dm_window import DMWindow
 from windows.player_window import PlayerWindow
 
 # Fog methods
-from utils.fog_utils import reset_fog, clear_fog, reveal_area
+from utils.fog_utils import reset_fog, clear_fog
 
 # Save/load methods
 from utils.save_utils import (
@@ -109,11 +109,11 @@ class FogOfWar:
         save_load_frame.pack(pady=10)
 
         save_btn = ctk.CTkButton(save_load_frame, text="Save Fog State",
-                                 command=save_fog_state(self), width=120)
+                                 command=lambda: save_fog_state(self), width=120)
         save_btn.pack(side="left", padx=5)
 
         load_btn = ctk.CTkButton(save_load_frame, text="Load Fog State",
-                                 command=load_fog_state(self), width=120)
+                                 command=lambda: load_fog_state(self), width=120)
         load_btn.pack(side="left", padx=5)
 
         # Reveal radius slider
@@ -150,11 +150,11 @@ class FogOfWar:
         control_frame.pack(pady=10)
 
         reset_btn = ctk.CTkButton(control_frame, text="Reset Fog",
-                                  command=reset_fog, width=120)
+                                  command=lambda: reset_fog(self), width=120)
         reset_btn.pack(side="left", padx=5)
 
         clear_btn = ctk.CTkButton(control_frame, text="Clear All Fog",
-                                  command=clear_fog, width=120)
+                                  command=lambda: clear_fog(self), width=120)
         clear_btn.pack(side="left", padx=5)
 
         # Status label
@@ -274,7 +274,6 @@ class FogOfWar:
     def run(self):
         """Runs the main loop"""
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     app = FogOfWar()

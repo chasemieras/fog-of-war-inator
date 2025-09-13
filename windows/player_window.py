@@ -8,6 +8,7 @@ class PlayerWindow:
 
     def __init__(self, fog_app):
         self.fog_app = fog_app
+        print("player view opening")
         try:
             self.window = ctk.CTkToplevel(fog_app.root)
             self.window.title("Player View - Fog of War")
@@ -46,7 +47,7 @@ class PlayerWindow:
 
     def on_closing(self):
         """Handle window closing - auto-save before closing"""
-        self.player_window = None
+        self.fog_app.player_window = None
         self.window.destroy()
 
     def toggle_fullscreen(self, event=None):

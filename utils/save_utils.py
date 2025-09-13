@@ -69,14 +69,14 @@ def save_fog_state(self, auto_save=False):
             with open(save_path, 'w') as f:
                 json.dump(save_data, f, indent=2)
 
-            self.current_save_path = save_path
+            current_save_path = save_path
 
             if auto_save:
-                self.update_status("Auto-saved fog state")
+                update_status(self, "Auto-saved fog state")
             else:
                 messagebox.showinfo(
                     "Success", f"Fog state saved to {save_path}")
-                self.update_status("Fog state saved successfully")
+                update_status(self, "Fog state saved successfully")
 
             return True
 
@@ -84,7 +84,7 @@ def save_fog_state(self, auto_save=False):
             error_msg = f"Failed to save fog state: {str(e)}"
             if not auto_save:
                 messagebox.showerror("Error", error_msg)
-            self.update_status("Failed to save fog state")
+            update_status(self, "Failed to save fog state")
             return False
 
 def load_fog_state(self):
@@ -104,7 +104,7 @@ def load_fog_state(self):
         )
 
         if file_path:
-            self.load_fog_from_path(file_path)
+            load_fog_from_path(self, file_path)
 
 def load_fog_from_path(self, file_path):
         """Load fog state from a specific file path"""
@@ -163,9 +163,9 @@ def load_fog_from_path(self, file_path):
                 self.radius_value.configure(
                     text=f"{self.reveal_radius}x{self.reveal_radius} pixels")
 
-            self.current_save_path = file_path
+            current_save_path = file_path
             messagebox.showinfo("Success", "Fog state loaded successfully!")
-            self.update_status("Fog state loaded successfully")
+            update_status(self, "Fog state loaded successfully")
 
             # Update windows if they're open
             self.update_queue.put("update_all")
@@ -174,7 +174,7 @@ def load_fog_from_path(self, file_path):
         except Exception as e:
             messagebox.showerror(
                 "Error", f"Failed to load fog state: {str(e)}")
-            self.update_status("Failed to load fog state")
+            update_status(self, "Failed to load fog state")
             return False
 
 def auto_load_fog_state(self):
@@ -186,8 +186,8 @@ def auto_load_fog_state(self):
         auto_save_path = get_fog_save_path(self)
         if auto_save_path and os.path.exists(auto_save_path):
             try:
-                self.load_fog_from_path(auto_save_path)
-                self.update_status("Auto-loaded existing fog state")
+                load_fog_from_path(self, auto_save_path)
+                update_status(self, "Auto-loaded existing fog state")
                 return
             except:
                 # Continue to search for other matches
@@ -210,16 +210,15 @@ def auto_load_fog_state(self):
                 if fog_name == map_name:
                     fog_path = os.path.join(fog_dir, filename)
                     try:
-                        self.load_fog_from_path(fog_path)
-                        self.update_status(
-                            f"Auto-loaded fog state: {filename}")
+                        load_fog_from_path(fog_path)
+                        update_status(self, f"Auto-loaded fog state: {filename}")
                         return
                     except:
                         continue
 
 def manual_save(self, event=None):
         """Handle Ctrl+S manual save"""
-        self.save_fog_state(auto_save=False)
+        save_fog_state(self, auto_save=False)
 
 def update_status(self, message):
         """Update the status label"""

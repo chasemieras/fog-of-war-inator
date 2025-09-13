@@ -44,11 +44,11 @@ def save_fog_state(self, auto_save=False):
             self.current_save_path = save_path
 
             if auto_save:
-                self.update_status("Auto-saved fog state")
+                update_status(self, "Auto-saved fog state")
             else:
                 messagebox.showinfo(
                     "Success", f"Fog state saved to {save_path}")
-                self.update_status("Fog state saved successfully")
+                update_status(self, "Fog state saved successfully")
 
             return True
 
@@ -56,5 +56,5 @@ def save_fog_state(self, auto_save=False):
             error_msg = f"Failed to save fog state: {str(e)}"
             if not auto_save:
                 messagebox.showerror("Error", error_msg)
-            self.update_status("Failed to save fog state")
+            update_status(self, "Failed to save fog state")
             return False

@@ -4,8 +4,8 @@ from tkinter import messagebox
 import numpy as np
 from PIL import Image, ImageTk
 
-from utils.save_utils import manual_save
-from utils.fog_state import save_fog_state
+from utils.save_utils import manual_save, save_fog_state
+from utils.fog_utils import reset_fog, clear_fog, reveal_area
 
 class DMWindow:
     """Generates the DM Window"""
@@ -24,12 +24,10 @@ class DMWindow:
             self.window.bind('<F11>', self.toggle_fullscreen)
 
             # Bind Ctrl+S for manual save
-            self.window.bind('<Control-s>', manual_save)
+            self.window.bind('<Control-s>', lambda e: manual_save(self.fog_app))
 
             self.window.bind('<Control-z>', lambda e: self.fog_app.undo())
             self.window.bind('<Control-y>', lambda e: self.fog_app.redo())
-
-            self.window.bind('<F1>', self.show_help)
 
             # Bind window close event to auto-save
             self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -79,7 +77,7 @@ class DMWindow:
 
     def on_closing(self):
         """Handle window closing - auto-save before closing"""
-        save_fog_state(self, auto_save=True)
+        save_fog_state(self.fog_app, auto_save=True)
         self.fog_app.dm_window = None
         self.window.destroy()
 
@@ -103,7 +101,7 @@ class DMWindow:
             x = max(0, min(x, self.fog_app.map_image.shape[1] - 1))
             y = max(0, min(y, self.fog_app.map_image.shape[0] - 1))
 
-            self.fog_app.reveal_area(x, y, force_update=True)
+            reveal_area(self.fog_app, x, y, force_update=True)
 
     def on_drag(self, event):
         """Does basically on click but when dragging"""
@@ -117,7 +115,7 @@ class DMWindow:
             x = max(0, min(x, self.fog_app.map_image.shape[1] - 1))
             y = max(0, min(y, self.fog_app.map_image.shape[0] - 1))
 
-            self.fog_app.reveal_area(x, y, force_update=False)
+            reveal_area(self.fog_app, x, y, force_update=False)
 
     def update_display(self):
         """Updates the DM display"""

@@ -4,9 +4,9 @@ def undo(self, event=None):
             self.redo_stack.append(self.fog_mask.copy())
             self.fog_mask = self.undo_stack.pop()
             self.update_queue.put("update_all")
-            self.update_status("Undo applied")
+            update_status(self, "Undo applied")
         else:
-            self.update_status("Nothing to undo")
+            update_status(self, "Nothing to undo")
 
 def redo(self):
         """Redoes the undo action"""
@@ -14,6 +14,6 @@ def redo(self):
             self.undo_stack.append(self.fog_mask.copy())
             self.fog_mask = self.redo_stack.pop()
             self.update_queue.put("update_all")
-            self.update_status("Redo applied")
+            update_status("self, Redo applied")
         else:
-            self.update_status("Nothing to redo")
+            update_status(self, "Nothing to redo")
